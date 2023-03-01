@@ -73,8 +73,7 @@ def write_json_gpx(recent_trip, trip_json):
     trip.update(recent_trip)
     trip['tripEvents'] = trip_json['tripEvents']
     json_dir = f"{myt_dir}/json/"
-    desc = f"{trip['startTimeGmt']} {trip['startAddress']} - {trip['endTimeGmt']} {trip['endAddress']}"
-    desc = desc.replace(':', colon)
+    desc = f"{trip['startTimeGmt']} {trip['startAddress']} - {trip['endTimeGmt']} {trip['endAddress']}".replace(':', colon)
     if not os.path.exists(json_dir):
         os.makedirs(json_dir)
     json_object = json.dumps(trip, indent=4)
@@ -175,7 +174,7 @@ print(f'össztávolság: {total_distance:2.2f} km')
 print(f'összfogyasztás: {total_consumption:2.2f} l')
 print(f'átlagfogyasztás: {total_consumption * 100 / total_distance:2.2f} l/100km')
 
-csv_file_path = f"{myt_dir}/trips {startTimeGmt} - {endTimeGmt}.csv".replace(':', colon)
+csv_file_path = myt_dir + f"/trips {startTimeGmt} - {endTimeGmt}.csv".replace(':', colon)
 write_csv(recentTrips, csv_file_path)
 
 merge_trip_csv()
