@@ -22,7 +22,7 @@ import glob
 def write_csv(recentTrips, csv_file_path):    
     csv_headers = recentTrips[0].keys()
     stat(recentTrips, csv_headers)
-    with open(csv_file_path, 'w') as f:
+    with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=csv_headers)
         writer.writeheader()
         writer.writerows(recentTrips)
@@ -77,7 +77,7 @@ def write_json_gpx(recent_trip, trip_json):
     if not os.path.exists(json_dir):
         os.makedirs(json_dir)
     json_object = json.dumps(trip, indent=4)
-    with open(f"{json_dir}{desc}.json", "w") as outfile:
+    with open(f"{json_dir}{desc}.json", "w", encoding='utf-8') as outfile:
         outfile.write(json_object)
 
     gpx_dir = f"{myt_dir}/gpx/"
@@ -87,7 +87,7 @@ def write_json_gpx(recent_trip, trip_json):
     for point in trip_json['tripEvents']:
         gpx += f'\n      <trkpt lat="{point["lat"]}" lon="{point["lon"]}" />'
     gpx += '\n    </trkseg>\n  </trk>\n</gpx>'
-    with open(f"{gpx_dir}{desc}.gpx", "w") as outfile:
+    with open(f"{gpx_dir}{desc}.gpx", "w", encoding='utf-8') as outfile:
         outfile.write(gpx)
 
 
@@ -97,13 +97,13 @@ def merge_trip_csv():
     all_line_count = 0
     for file in files :        
         line_count = 0
-        with open(file, mode='r') as csv_file:
+        with open(file, mode='r', encoding='utf-8') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 if  row['tripId'] == STATISTICS :
                     continue                
                 line_count += 1
-                print(f'\t{row["startTimeGmt"]} tripId {row["tripId"]}')
+                #print(f'\t{row["startTimeGmt"]} tripId {row["tripId"]}')
                 trips[row["startTimeGmt"]] = row
         print(f'{file} processed {line_count} lines.')
         all_line_count += line_count
@@ -185,4 +185,3 @@ hours, remainder = divmod(total_seconds, 3600)
 minutes, seconds = divmod(remainder, 60)
 print(f'{len(recentTrips)} utazás letöltve a következő helyre: {csv_file_path}')
 print(f'futási idő: {total_seconds:2.2f} sec:   {hours:.0f}h {minutes:.0f}m {seconds:2.2f}s')
-
