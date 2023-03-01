@@ -175,7 +175,7 @@ print(f'össztávolság: {total_distance:2.2f} km')
 print(f'összfogyasztás: {total_consumption:2.2f} l')
 print(f'átlagfogyasztás: {total_consumption * 100 / total_distance:2.2f} l/100km')
 
-csv_file_path = f"{myt_dir}/trips {startTimeGmt} - {endTimeGmt}.csv"
+csv_file_path = f"{myt_dir}/trips {startTimeGmt} - {endTimeGmt}.csv".replace(':', colon)
 write_csv(recentTrips, csv_file_path)
 
 merge_trip_csv()
