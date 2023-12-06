@@ -7,19 +7,18 @@ myt_dir = "könyvtár elérési útja ahova a CSV és esetleg a JSON és GPX fá
 write_trip = True   # az utazások kiírása JSON és GPX formában, ha nem kell, akkor: False
 colon = ":" # ha a kettőspont a fájlnevekben nem megengedett, akkor erre lehet cserélni
 
-
 sum_attrs = ['totalDurationInSec', 'idleDurationInSec', 'highwayDurationInSec', 'overspeedDurationInSec', 'totalDistanceInKm', 'highwayDistanceInKm', 'overspeedDistanceInKm', 'fuelConsumptionInL', 'hardAccelerationCount', 'hardBrakingCount', 'hardaccs', 'hardbrakes', 'totalDistanceInMiles']
 STATISTICS = 'statistics'
 
 import datetime
 import requests
-import csv 
+import csv
 import os
 import json
 import glob
 
 
-def write_csv(recentTrips, csv_file_path):    
+def write_csv(recentTrips, csv_file_path):
     csv_headers = recentTrips[0].keys()
     stat(recentTrips, csv_headers)
     with open(csv_file_path, 'w', newline='', encoding='utf-8') as f:
@@ -28,34 +27,38 @@ def write_csv(recentTrips, csv_file_path):
         writer.writerows(recentTrips)
 
 
-def sum_attr(recentTrips, attr_name):  
+def sum_attr(recentTrips, attr_name):
     sum_value = 0
     maxSpeedInKmph = 0
     for trip in recentTrips :
         if attr_name in sum_attrs :
             curr_value = float(trip[attr_name])
-            sum_value += curr_value  
+            sum_value += curr_value
             trip[attr_name] = float_format(curr_value)
-            if sum_value.is_integer(): 
-                sum_value = int(sum_value) 
+            if sum_value.is_integer():
+                sum_value = int(sum_value)
         elif attr_name == 'maxSpeedInKmph' :
             maxSpeedInKmph = max(maxSpeedInKmph, float(trip[attr_name]))
         elif 'average' in attr_name :
             trip[attr_name] = float_format(float(trip[attr_name]))
     if attr_name in sum_attrs :
         if 'InSec' in attr_name :
-            sum_value /= 3600  
+            sum_value /= 3600
         return sum_value
     if attr_name == 'maxSpeedInKmph' :
         return maxSpeedInKmph
     return ''
-   
-        
-def float_format(value): 
+
+
+def float_format(value):
     return f"{value:.2f}"
-   
-        
-def stat(recentTrips, csv_headers):  
+
+
+def correct_file_name(file_name):
+    return file_name.replace(':', colon).replace('/', '%')
+
+
+def stat(recentTrips, csv_headers):
     stat_row = {}
     stat_row['maxSpeedInKmph'] = 0
     for attr_name in csv_headers:
@@ -73,7 +76,7 @@ def write_json_gpx(recent_trip, trip_json):
     trip.update(recent_trip)
     trip['tripEvents'] = trip_json['tripEvents']
     json_dir = f"{myt_dir}/json/"
-    desc = f"{trip['startTimeGmt']} {trip['startAddress']} - {trip['endTimeGmt']} {trip['endAddress']}".replace(':', colon)
+    desc = correct_file_name(f"{trip['startTimeGmt']} {trip['startAddress']} - {trip['endTimeGmt']} {trip['endAddress']}")
     if not os.path.exists(json_dir):
         os.makedirs(json_dir)
     json_object = json.dumps(trip, indent=4)
@@ -93,17 +96,17 @@ def write_json_gpx(recent_trip, trip_json):
 
 def merge_trip_csv():
     trips = {}
-    files = glob.glob(myt_dir+'/**/trips *.csv', recursive=True)       
+    files = glob.glob(myt_dir+'/**/trips *.csv', recursive=True)
     all_line_count = 0
-    for file in files :        
+    for file in files :
         line_count = 0
         with open(file, mode='r', encoding='utf-8') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             for row in csv_reader:
                 if  row['tripId'] == STATISTICS :
-                    continue                
+                    continue
                 line_count += 1
-                #print(f'\t{row["startTimeGmt"]} tripId {row["tripId"]}')
+                print(f'\t{row["startTimeGmt"]} tripId {row["tripId"]}')
                 trips[row["startTimeGmt"]] = row
         print(f'{file} processed {line_count} lines.')
         all_line_count += line_count
@@ -112,7 +115,6 @@ def merge_trip_csv():
     csv_file_path = f"{myt_dir}/trips.csv"
     write_csv(sorted_trips, csv_file_path)
     print(f'merged {len(sorted_trips)} lines to {csv_file_path}.')
-    
 
 start = datetime.datetime.now()
 
@@ -159,22 +161,22 @@ for recent_trip in recentTrips :
     response = requests.get(url = url_gettrip, headers = headers)
     trip_json = response.json()
     statistics = trip_json['statistics']
-    recent_trip.update(statistics) 
+    recent_trip.update(statistics)
     total_consumption += float(statistics['fuelConsumptionInL'])
     total_distance += float(statistics['totalDistanceInKm'])
     if startTimeGmt > recent_startTimeGmt:
         startTimeGmt = recent_startTimeGmt
     if endTimeGmt < recent_endTimeGmt:
         endTimeGmt = recent_endTimeGmt
-        
+
     if write_trip :
         write_json_gpx(recent_trip, trip_json)
-    
+
 print(f'össztávolság: {total_distance:2.2f} km')
 print(f'összfogyasztás: {total_consumption:2.2f} l')
 print(f'átlagfogyasztás: {total_consumption * 100 / total_distance:2.2f} l/100km')
 
-csv_file_path = myt_dir + f"/trips {startTimeGmt} - {endTimeGmt}.csv".replace(':', colon)
+csv_file_path = f"{myt_dir}/{correct_file_name(f'trips {startTimeGmt} - {endTimeGmt}.csv')}"
 write_csv(recentTrips, csv_file_path)
 
 merge_trip_csv()
@@ -185,3 +187,4 @@ hours, remainder = divmod(total_seconds, 3600)
 minutes, seconds = divmod(remainder, 60)
 print(f'{len(recentTrips)} utazás letöltve a következő helyre: {csv_file_path}')
 print(f'futási idő: {total_seconds:2.2f} sec:   {hours:.0f}h {minutes:.0f}m {seconds:2.2f}s')
+
